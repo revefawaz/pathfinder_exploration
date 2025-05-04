@@ -71,8 +71,8 @@ Launching the simulation with multiple robots automatically starts RViz for each
 ## **Our Contribution:**
 An explotation node was added to ensure autonomous exploration.
 
-run in terminal: ros2 launch pathfinder single_bot_sim.launch.py
+Run in terminal: ros2 launch pathfinder single_bot_sim.launch.py
 
-to visualize in rviz: rviz2 -d ~/ros2_ws/src/pathfinder/config/view_nav2_slam.rviz
+To visualize in rviz: rviz2 -d ~/ros2_ws/src/pathfinder/config/view_nav2_slam.rviz
 
-in rviz dont forget to add tf, robotmodel,path (topic /plan) ,laserscan (topic /scan)
+In rviz dont forget to add tf, robotmodel,path (topic /plan) ,laserscan (topic /scan)
