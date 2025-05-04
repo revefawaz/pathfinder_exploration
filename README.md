@@ -63,13 +63,13 @@ rviz2 -d src/pathfinder/config/view_nav2_slam.rviz
 > This has currently only been tested on **ROS 2 Humble**
 ```bash
 ros2 launch pathfinder multi_bot_sim.launch.py
+```
+Launching the simulation with multiple robots automatically starts RViz for each robot.
 
-Our Contribution:
+> **NOTE:** Spawning multiple robots with online SLAM and the full navigation stack in each namespace requires a capable dev machine.
+>
+> Our Contribution:
 An explotation node was added to ensure autonomous exploration
 run in terminal: ros2 launch pathfinder single_bot_sim.launch.py
 to visualize in rviz: rviz2 -d ~/ros2_ws/src/pathfinder/config/view_nav2_slam.rviz
 in rviz dont forget to add tf, robotmodel,path (topic /plan) ,laserscan (topic /scan)
-```
-Launching the simulation with multiple robots automatically starts RViz for each robot.
-
-> **NOTE:** Spawning multiple robots with online SLAM and the full navigation stack in each namespace requires a capable dev machine. 
