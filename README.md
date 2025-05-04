@@ -4,7 +4,6 @@ A ROS 2 Gazebo simulation of a differential drive robot.
 ## **Features**
 - SLAM thanks to [slam_toolbox](https://github.com/SteveMacenski/slam_toolbox)
 - Autonmous navigation thanks to [nav2](https://github.com/ros-planning/navigation2)
-- Autonmous exploration thanks to [m_explore](https://github.com/robo-friends/m-explore-ros2)
 - Multi-robot simulation 
 
 ## **Requirements**
@@ -64,6 +63,12 @@ rviz2 -d src/pathfinder/config/view_nav2_slam.rviz
 > This has currently only been tested on **ROS 2 Humble**
 ```bash
 ros2 launch pathfinder multi_bot_sim.launch.py
+
+Our Contribution:
+An explotation node was added to ensure autonomous exploration
+run in terminal: ros2 launch pathfinder single_bot_sim.launch.py
+to visualize in rviz: rviz2 -d ~/ros2_ws/src/pathfinder/config/view_nav2_slam.rviz
+in rviz dont forget to add tf, robotmodel,path (topic /plan) ,laserscan (topic /scan)
 ```
 Launching the simulation with multiple robots automatically starts RViz for each robot.
 
