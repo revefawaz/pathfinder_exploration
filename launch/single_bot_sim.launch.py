@@ -2,77 +2,118 @@ import os
 import xacro
 
 from ament_index_python.packages import get_package_share_directory
-
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, RegisterEventHandler
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.event_handlers import OnExecutionComplete
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
-
 def generate_launch_description():
+    pkg_path = get_package_share_directory('pathfinder')
 
-    pkg_pathfinder = get_package_share_directory('pathfinder')
+    # Allow use of simulation time
+    use_sim_time = LaunchConfiguration('use_sim_time', default='true')
+    declare_sim_time = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='Use simulation (Gazebo) clock'
+    )
 
-    # Process the URDF xacro file
-    xacro_file = os.path.join(pkg_pathfinder,'description','robot.urdf.xacro')
-    urdf = xacro.process_file(xacro_file)
+    # Robot State Publisher (URDF → /tf)
+    xacro_file = os.path.join(pkg_path, 'description', 'robot.urdf.xacro')
+    robot_desc = xacro.process_file(xacro_file).toxml()
     
-    # Include the robot_state_publisher to publish transforms
     rsp = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
-        parameters=[{'robot_description': urdf.toxml()}]
+        parameters=[    
+            {'robot_description': robot_desc},
+            {'use_sim_time': use_sim_time}
+        ]
     )
 
-    # Include the Gazebo launch file, provided by the gazebo_ros package
-    world_file_path = os.path.join(pkg_pathfinder, 'worlds', 'maze.world') 
+    # Static transform to connect odom → base_link
+    static_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='odom_to_base_link',
+        output='screen',
+        arguments=[
+            '0', '0', '0',    # x y z
+            '0', '0', '0',    # roll pitch yaw
+            'odom', 'base_link'
+        ]
+    )
+
+    # Gazebo simulator
+    world = os.path.join(pkg_path, 'worlds', 'maze.world')
     gazebo = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(
-                    get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py')]),
-                    launch_arguments={'world': world_file_path}.items()
+        PythonLaunchDescriptionSource([
+            os.path.join(
+                get_package_share_directory('gazebo_ros'),
+                'launch', 'gazebo.launch.py')
+        ]),
+        launch_arguments={
+            'world': world,
+            'use_sim_time': use_sim_time
+        }.items()
     )
 
-    # Run the spawner node from the gazebo_ros package to spawn the robot in the simulation
-    spawn_entity = Node(
-                package='gazebo_ros', 
-                executable='spawn_entity.py',
-                output='screen',
-                arguments=['-topic', 'robot_description',   # The the robot description is published by the rsp node on the /robot_description topic
-                           '-entity', 'pathfinder'],        # The name of the entity to spawn (doesn't matter if you only have one robot)
+    # Spawn the robot into Gazebo
+    spawn = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        output='screen',
+        arguments=[
+            '-topic', 'robot_description',
+            '-entity', 'pathfinder'
+        ]
     )
 
-    # Load SLAM parameters from yaml file and add node to launch description
-    slam_params_file = os.path.join(pkg_pathfinder,'config', 'slam_params_online_async.yaml')
+    # SLAM (async online)
+    slam_params = os.path.join(pkg_path, 'config', 'slam_params_online_async.yaml')
     slam = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(pkg_pathfinder,'launch','slam_online_async_launch.py')]), 
-                launch_arguments={'params_file': slam_params_file}.items()
+        PythonLaunchDescriptionSource([
+            os.path.join(pkg_path, 'launch', 'slam_online_async_launch.py')
+        ]),
+        launch_arguments={
+            'params_file': slam_params,
+            'use_sim_time': use_sim_time
+        }.items()
     )
 
-    # Include nav2_bringup launch file
-    nav2_params_file = os.path.join(pkg_pathfinder, 'config', 'nav2_params.yaml')
+    # Nav2 bringup
+    nav2_params = os.path.join(pkg_path, 'config', 'nav2_params.yaml')
     nav2 = IncludeLaunchDescription(
-                PythonLaunchDescriptionSource([os.path.join(pkg_pathfinder,'launch','navigation_launch.py')]),
-                launch_arguments={'params_file': nav2_params_file}.items()
+        PythonLaunchDescriptionSource([
+            os.path.join(pkg_path, 'launch', 'navigation_launch.py')
+        ]),
+        launch_arguments={
+            'params_file': nav2_params,
+            'use_sim_time': use_sim_time
+        }.items()
     )
-    
 
-    # Launch everything!
+    # In-repo exploration node
+    explore_node = Node(
+        package='pathfinder',
+        executable='exploration_node.py',
+        name='frontier_explorer',
+        output='screen',
+        parameters=[
+            {'use_sim_time': use_sim_time},
+            {'goal_timeout': 90.0}
+        ]
+    )
+
     return LaunchDescription([
-        DeclareLaunchArgument(
-          'use_sim_time',
-          default_value='true',
-          description='Use simulation/Gazebo clock'
-        ),
+        declare_sim_time,
         rsp,
+        static_tf,
         gazebo,
-        RegisterEventHandler(
-                    event_handler=OnExecutionComplete(
-                        target_action=spawn_entity,
-                        on_completion=[nav2] # launch nav2 after robot is spawned
-                    )
-        ),
-        spawn_entity,
+        spawn,
         slam,
+        nav2,
+        explore_node,
     ])
