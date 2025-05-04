@@ -41,4 +41,9 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(PROGRAMS
+  scripts/exploration_node.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()
