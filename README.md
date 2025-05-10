@@ -78,3 +78,6 @@ If you want to test it on different worlds: ros2 launch pathfinder single_bot_si
 To visualize in rviz: rviz2 -d ~/ros2_ws/src/pathfinder/config/view_nav2_slam.rviz
 
 In rviz dont forget to add tf, robotmodel,path (topic /plan) ,laserscan (topic /scan)
+
+### Video Demonstrating the Project:
+
