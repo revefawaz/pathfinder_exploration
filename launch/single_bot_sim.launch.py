@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import xacro
 
@@ -18,6 +20,14 @@ def generate_launch_description():
         default_value='true',
         description='Use simulation (Gazebo) clock'
     )
+
+    # Allow choosing which world to load
+    declare_world_cmd = DeclareLaunchArgument(
+        'world',
+        default_value=os.path.join(pkg_path, 'worlds', 'maze.world'),
+        description='Full path to the world file to load'
+    )
+    world_arg = LaunchConfiguration('world')
 
     # Robot State Publisher (URDF → /tf)
     xacro_file = os.path.join(pkg_path, 'description', 'robot.urdf.xacro')
@@ -47,15 +57,15 @@ def generate_launch_description():
     )
 
     # Gazebo simulator
-    world = os.path.join(pkg_path, 'worlds', 'maze.world')
     gazebo = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
+        PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory('gazebo_ros'),
-                'launch', 'gazebo.launch.py')
-        ]),
+                'launch', 'gazebo.launch.py'
+            )
+        ),
         launch_arguments={
-            'world': world,
+            'world': world_arg,
             'use_sim_time': use_sim_time
         }.items()
     )
@@ -74,9 +84,9 @@ def generate_launch_description():
     # SLAM (async online)
     slam_params = os.path.join(pkg_path, 'config', 'slam_params_online_async.yaml')
     slam = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
+        PythonLaunchDescriptionSource(
             os.path.join(pkg_path, 'launch', 'slam_online_async_launch.py')
-        ]),
+        ),
         launch_arguments={
             'params_file': slam_params,
             'use_sim_time': use_sim_time
@@ -86,9 +96,9 @@ def generate_launch_description():
     # Nav2 bringup
     nav2_params = os.path.join(pkg_path, 'config', 'nav2_params.yaml')
     nav2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
+        PythonLaunchDescriptionSource(
             os.path.join(pkg_path, 'launch', 'navigation_launch.py')
-        ]),
+        ),
         launch_arguments={
             'params_file': nav2_params,
             'use_sim_time': use_sim_time
@@ -109,6 +119,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         declare_sim_time,
+        declare_world_cmd,
         rsp,
         static_tf,
         gazebo,
