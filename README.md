@@ -80,4 +80,4 @@ To visualize in rviz: rviz2 -d ~/ros2_ws/src/pathfinder/config/view_nav2_slam.rv
 In rviz dont forget to add tf, robotmodel,path (topic /plan) ,laserscan (topic /scan)
 
 ### Video Demonstrating the Project:
-
+https://lauedu74602-my.sharepoint.com/:v:/g/personal/reve_fawaz_lau_edu/ETlSqPLgQqFKiIA8Hk7KXcYBhNJwYIY1oOBGTcuKOhpZFA?e=tohTGo
